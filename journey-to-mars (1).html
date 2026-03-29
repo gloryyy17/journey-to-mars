@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Journey to Mars — Mission Ares VII</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   VARIABLES & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --rust:    #c1440e;
+  --ember:   #e8693a;
+  --gold:    #f4a24b;
+  --plasma:  #ff6b35;
+  --deep:    #020408;
+  --void:    #040810;
+  --space:   #080f1e;
+  --nebula:  #0d1829;
+  --fog:     #172035;
+  --ice:     #7ab8e8;
+  --pale:    #c8d8ee;
+  --white:   #f5f0e8;
+  --dim:     #5a7090;
+  --glow-r:  rgba(232,105,58,.6);
+  --glow-g:  rgba(122,184,232,.4);
+  --font-d:  'Orbitron', sans-serif;
+  --font-b:  'Rajdhani', sans-serif;
+  --font-m:  'Share Tech Mono', monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;background:var(--deep)}
+body{
+  background:var(--deep);
+  color:var(--white);
+  font-family:var(--font-b);
+  font-size:16px;
+  line-height:1.6;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor{
+  position:fixed;width:12px;height:12px;
+  background:var(--ember);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:transform .1s,background .2s,width .2s,height .2s;
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;
+  border:1px solid rgba(232,105,58,.5);
+  border-radius:50%;pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:transform .18s ease,width .3s,height .3s,opacity .3s;
+}
+body:has(a:hover) #cursor,
+body:has(button:hover) #cursor{width:20px;height:20px;background:var(--gold)}
+body:has(a:hover) #cursor-ring,
+body:has(button:hover) #cursor-ring{width:56px;height:56px;opacity:.4}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--void)}
+::-webkit-scrollbar-thumb{background:var(--rust);border-radius:2px}
+
+/* ═══════════════════════════════════════════════
+   PRELOADER
+═══════════════════════════════════════════════ */
+#preloader{
+  position:fixed;inset:0;z-index:9000;
+  background:var(--deep);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:2rem;
+}
+.pl-title{
+  font-family:var(--font-d);font-size:.7rem;
+  letter-spacing:.4em;text-transform:uppercase;
+  color:var(--dim);
+}
+.pl-rocket{
+  font-size:4rem;animation:rocketBob 1.2s ease-in-out infinite;
+}
+@keyframes rocketBob{
+  0%,100%{transform:translateY(0) rotate(-45deg)}
+  50%{transform:translateY(-12px) rotate(-45deg)}
+}
+.pl-bar-wrap{
+  width:260px;height:2px;
+  background:rgba(255,255,255,.08);
+  border-radius:2px;overflow:hidden;
+}
+.pl-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--rust),var(--gold));
+  border-radius:2px;
+  transition:width .05s linear;
+}
+.pl-pct{
+  font-family:var(--font-m);font-size:.8rem;
+  color:var(--ember);letter-spacing:.1em;
+}
+.pl-status{
+  font-family:var(--font-m);font-size:.65rem;
+  color:var(--dim);letter-spacing:.05em;
+  min-height:1.2em;text-align:center;
+}
+
+/* ═══════════════════════════════════════════════
+   NAV DOTS
+═══════════════════════════════════════════════ */
+#dot-nav{
+  position:fixed;right:1.5rem;top:50%;z-index:800;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:.9rem;
+}
+.dot-btn{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.2);border:none;
+  cursor:pointer;transition:all .3s;
+  position:relative;
+}
+.dot-btn.active{background:var(--ember);box-shadow:0 0 10px var(--glow-r)}
+.dot-btn::after{
+  content:attr(data-label);
+  position:absolute;right:20px;top:50%;transform:translateY(-50%);
+  font-family:var(--font-m);font-size:.6rem;
+  color:var(--dim);white-space:nowrap;
+  opacity:0;transition:opacity .2s;
+  pointer-events:none;
+}
+.dot-btn:hover::after{opacity:1}
+.dot-btn:hover{background:var(--ember);transform:scale(1.4)}
+
+/* ═══════════════════════════════════════════════
+   SECTION SHARED
+═══════════════════════════════════════════════ */
+section{
+  position:relative;
+  min-height:100dvh;
+  overflow:hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   S1 — HERO: MISSION BRIEFING
+═══════════════════════════════════════════════ */
+#s1-hero{
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 60%, #0a1628 0%, var(--deep) 70%);
+}
+#starfield-canvas{
+  position:absolute;inset:0;width:100%;height:100%;z-index:0;
+}
+
+.hero-inner{
+  position:relative;z-index:2;
+  text-align:center;
+  padding:2rem;
+  max-width:900px;
+}
+.mission-tag{
+  display:inline-block;
+  font-family:var(--font-m);font-size:.68rem;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--ember);
+  border:1px solid rgba(232,105,58,.3);
+  border-radius:2px;padding:.4rem 1.2rem;
+  margin-bottom:2rem;
+  opacity:0;transform:translateY(20px);
+  background:rgba(193,68,14,.06);
+}
+.hero-h1{
+  font-family:var(--font-d);
+  font-size:clamp(2.4rem,8vw,6.5rem);
+  font-weight:900;line-height:1;
+  letter-spacing:-.02em;
+  background:linear-gradient(160deg,var(--white) 0%,var(--gold) 40%,var(--ember) 75%,var(--rust) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:1.5rem;
+  opacity:0;transform:translateY(40px);
+}
+.hero-sub{
+  font-family:var(--font-b);font-weight:300;
+  font-size:clamp(1rem,2.5vw,1.4rem);
+  color:var(--pale);letter-spacing:.08em;
+  margin-bottom:3rem;
+  opacity:0;transform:translateY(20px);
+}
+.hero-meta{
+  display:flex;justify-content:center;gap:2.5rem;
+  margin-bottom:3rem;
+  opacity:0;
+}
+.meta-item{
+  text-align:center;
+}
+.meta-val{
+  display:block;font-family:var(--font-m);font-size:1.2rem;
+  color:var(--gold);
+}
+.meta-lbl{
+  font-family:var(--font-b);font-size:.7rem;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--dim);
+}
+.cta-btn{
+  font-family:var(--font-d);font-size:.7rem;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--white);background:transparent;
+  border:1px solid var(--ember);
+  padding:.9rem 2.5rem;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:color .3s;
+  opacity:0;
+}
+.cta-btn::before{
+  content:'';position:absolute;
+  inset:0;background:var(--rust);
+  transform:translateX(-101%);transition:transform .35s cubic-bezier(.77,0,.18,1);
+}
+.cta-btn:hover{color:var(--white);}
+.cta-btn:hover::before{transform:translateX(0)}
+.cta-btn span{position:relative;z-index:1;}
+
+/* CREW CARDS */
+.crew-row{
+  display:flex;gap:1.2rem;justify-content:center;
+  margin-top:4rem;flex-wrap:wrap;
+  opacity:0;transform:translateY(30px);
+}
+.crew-card{
+  width:140px;perspective:800px;cursor:pointer;
+}
+.crew-inner{
+  width:100%;position:relative;transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+  height:190px;
+}
+.crew-card:hover .crew-inner{transform:rotateY(180deg)}
+.crew-front,.crew-back{
+  position:absolute;inset:0;backface-visibility:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.5rem;padding:1rem;
+  background:rgba(13,24,41,.7);
+  backdrop-filter:blur(10px);
+}
+.crew-back{
+  transform:rotateY(180deg);
+  background:rgba(193,68,14,.15);
+  border-color:rgba(232,105,58,.3);
+  text-align:center;
+}
+.crew-avatar{font-size:2.5rem;margin-bottom:.3rem}
+.crew-name{
+  font-family:var(--font-d);font-size:.55rem;
+  letter-spacing:.15em;color:var(--white);text-transform:uppercase;
+}
+.crew-role{
+  font-family:var(--font-m);font-size:.6rem;color:var(--ember);
+}
+.crew-bio{
+  font-family:var(--font-b);font-size:.72rem;color:var(--pale);
+  line-height:1.4;
+}
+
+/* SCROLL HINT */
+.scroll-hint{
+  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;z-index:2;
+  opacity:.5;animation:scrollBob 2s ease-in-out infinite;
+}
+@keyframes scrollBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+.scroll-hint span{font-family:var(--font-m);font-size:.6rem;letter-spacing:.15em;color:var(--dim)}
+.scroll-hint svg{width:20px;height:20px;stroke:var(--dim)}
+
+/* ═══════════════════════════════════════════════
+   S2 — LAUNCH
+═══════════════════════════════════════════════ */
+#s2-launch{
+  display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;
+  background:radial-gradient(ellipse at 50% 100%, #1a0800 0%, var(--deep) 60%);
+  min-height:100dvh;
+  padding:5rem 4rem;
+  gap:3rem;
+}
+@media(max-width:768px){#s2-launch{grid-template-columns:1fr;padding:5rem 1.5rem 3rem}}
+
+.launch-left{position:relative;z-index:2;}
+.section-eyebrow{
+  font-family:var(--font-m);font-size:.65rem;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--rust);margin-bottom:1rem;display:flex;align-items:center;gap:.8rem;
+}
+.section-eyebrow::before{
+  content:'';display:inline-block;width:30px;height:1px;background:var(--rust);
+}
+.section-h2{
+  font-family:var(--font-d);
+  font-size:clamp(1.8rem,4vw,3rem);
+  font-weight:700;line-height:1.1;
+  color:var(--white);margin-bottom:1.5rem;
+}
+.section-p{
+  font-family:var(--font-b);font-weight:300;
+  font-size:1rem;color:var(--pale);
+  line-height:1.7;margin-bottom:2rem;
+}
+
+/* Checklist */
+.checklist-panel{margin-bottom:2rem;}
+.check-item{
+  display:flex;align-items:center;gap:1rem;
+  padding:.8rem 1rem;margin-bottom:.6rem;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(13,24,41,.5);
+  cursor:pointer;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.check-item:hover{border-color:rgba(232,105,58,.3);background:rgba(193,68,14,.08)}
+.check-item.checked{border-color:rgba(78,203,141,.4);background:rgba(26,102,69,.1)}
+.check-box{
+  width:22px;height:22px;
+  border:1px solid var(--dim);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .25s;font-size:.8rem;
+}
+.check-item.checked .check-box{
+  background:rgba(78,203,141,.2);border-color:#4ecb8d;color:#4ecb8d;
+}
+.check-label{font-family:var(--font-b);font-size:.9rem;color:var(--pale);font-weight:500}
+.check-status{
+  font-family:var(--font-m);font-size:.6rem;letter-spacing:.1em;
+  margin-left:auto;color:var(--dim);transition:color .25s;
+}
+.check-item.checked .check-status{color:#4ecb8d}
+
+.launch-btn{
+  font-family:var(--font-d);font-size:.65rem;
+  letter-spacing:.2em;text-transform:uppercase;
+  width:100%;padding:1rem;
+  background:transparent;
+  border:1px solid rgba(255,255,255,.1);
+  color:var(--dim);cursor:not-allowed;
+  position:relative;overflow:hidden;
+  transition:all .4s;
+}
+.launch-btn.armed{
+  color:var(--white);
+  border-color:var(--ember);cursor:pointer;
+  animation:armPulse 1.5s ease-in-out infinite;
+}
+@keyframes armPulse{
+  0%,100%{box-shadow:0 0 0 rgba(232,105,58,0)}
+  50%{box-shadow:0 0 25px rgba(232,105,58,.4),0 0 50px rgba(232,105,58,.15)}
+}
+.launch-btn.armed::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,var(--rust),var(--ember));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .5s cubic-bezier(.77,0,.18,1);
+}
+.launch-btn.armed:hover::before{transform:scaleX(1)}
+.launch-btn span{position:relative;z-index:1}
+
+/* ROCKET VISUAL */
+.launch-right{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;
+}
+.rocket-scene{
+  position:relative;width:180px;height:360px;
+  display:flex;flex-direction:column;align-items:center;
+}
+.rocket-body{
+  width:100%;height:100%;position:relative;
+  animation:rocketIdle 3s ease-in-out infinite;
+  transition:all .3s;
+}
+@keyframes rocketIdle{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+.rocket-svg{width:100%;height:100%}
+
+.exhaust-wrap{
+  position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;
+}
+.exhaust-flame{
+  width:18px;height:0px;border-radius:0 0 8px 8px;
+  background:linear-gradient(to bottom,var(--gold),var(--ember),transparent);
+  opacity:0;transition:height .3s,opacity .3s;
+  transform-origin:top;
+}
+.launch-btn.armed ~ .rocket-scene .exhaust-flame,
+.exhaust-active .exhaust-flame{
+  height:40px;opacity:.8;
+  animation:flameFlicker .15s ease-in-out infinite alternate;
+}
+@keyframes flameFlicker{
+  0%{height:35px;opacity:.7}100%{height:45px;opacity:1}
+}
+
+.countdown-ring{
+  width:120px;height:120px;margin-top:2rem;position:relative;
+}
+.countdown-ring svg{transform:rotate(-90deg)}
+.ring-bg{stroke:rgba(255,255,255,.06)}
+.ring-fill{
+  stroke:var(--ember);stroke-linecap:round;
+  stroke-dasharray:314;stroke-dashoffset:314;
+  transition:stroke-dashoffset .5s linear;
+}
+.ring-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.ring-num{
+  font-family:var(--font-d);font-size:2rem;font-weight:700;
+  color:var(--white);line-height:1;
+}
+.ring-lbl{font-family:var(--font-m);font-size:.5rem;letter-spacing:.15em;color:var(--dim)}
+
+/* Atmosphere gradient overlay for scroll effect */
+.atmo-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,
+    rgba(20,40,100,0) 0%,
+    rgba(40,20,10,0) 50%,
+    rgba(193,68,14,0) 100%
+  );
+  pointer-events:none;z-index:1;
+  transition:background 1s;
+}
+
+/* ═══════════════════════════════════════════════
+   S3 — TRANSIT
+═══════════════════════════════════════════════ */
+#s3-transit{
+  background:var(--void);
+  padding:6rem 4rem;
+  @media(max-width:768px){padding:5rem 1.5rem}
+}
+@media(max-width:768px){#s3-transit{padding:5rem 1.5rem}}
+
+.transit-header{text-align:center;margin-bottom:5rem}
+.transit-header .section-eyebrow{justify-content:center}
+
+/* Orbit map */
+.orbit-map{
+  max-width:700px;margin:0 auto 5rem;
+  position:relative;
+}
+.orbit-svg{width:100%;overflow:visible}
+
+/* Stats counters */
+.stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;
+  max-width:700px;margin:0 auto 5rem;
+  text-align:center;
+}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr}}
+.stat-card{
+  padding:2rem 1rem;
+  border:1px solid rgba(255,255,255,.05);
+  background:rgba(13,24,41,.4);
+  position:relative;overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--ember),transparent);
+}
+.stat-num{
+  font-family:var(--font-m);font-size:clamp(1.2rem,3vw,1.8rem);
+  color:var(--gold);display:block;margin-bottom:.3rem;
+}
+.stat-lbl{font-family:var(--font-b);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+
+/* Log slider */
+.log-section{max-width:900px;margin:0 auto}
+.log-title{
+  font-family:var(--font-d);font-size:.65rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:1rem;
+}
+.log-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06)}
+
+.log-slider-wrap{overflow:hidden;cursor:grab;position:relative}
+.log-slider-wrap:active{cursor:grabbing}
+.log-track{
+  display:flex;gap:1.5rem;
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+  padding:.5rem 0 1rem;
+  will-change:transform;
+}
+.log-card{
+  min-width:280px;flex-shrink:0;
+  padding:1.5rem;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(13,24,41,.6);
+  transition:border-color .25s,transform .25s;
+  position:relative;
+}
+.log-card:hover{border-color:rgba(232,105,58,.25);transform:translateY(-3px)}
+.log-day{
+  font-family:var(--font-m);font-size:.62rem;
+  color:var(--rust);letter-spacing:.15em;margin-bottom:.8rem;
+}
+.log-text{
+  font-family:var(--font-b);font-weight:300;
+  font-size:.9rem;color:var(--pale);line-height:1.7;
+}
+.log-mood{position:absolute;top:1rem;right:1rem;font-size:1.1rem}
+
+.log-nav{display:flex;gap:.6rem;margin-top:1rem}
+.log-nav-btn{
+  width:32px;height:32px;border:1px solid rgba(255,255,255,.1);
+  background:transparent;color:var(--dim);cursor:pointer;
+  font-size:1rem;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.log-nav-btn:hover{border-color:var(--ember);color:var(--ember)}
+
+/* ═══════════════════════════════════════════════
+   S4 — LANDING / HUD
+═══════════════════════════════════════════════ */
+#s4-landing{
+  background:radial-gradient(ellipse at 50% 40%, #1a0500 0%, var(--deep) 65%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:sticky;top:0;/* sticky handled by ScrollTrigger pin */
+  padding:4rem 2rem;
+  min-height:100dvh;
+}
+
+.hud-frame{
+  width:min(900px,100%);
+  border:1px solid rgba(232,105,58,.2);
+  background:rgba(4,8,16,.85);
+  backdrop-filter:blur(20px);
+  position:relative;padding:2.5rem;
+}
+.hud-frame::before,.hud-frame::after{
+  content:'';position:absolute;
+  width:20px;height:20px;border-color:var(--ember);border-style:solid;
+}
+.hud-frame::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.hud-frame::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+
+.hud-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;padding-bottom:1rem;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.hud-title{font-family:var(--font-d);font-size:.7rem;letter-spacing:.25em;color:var(--ember)}
+.hud-status{
+  font-family:var(--font-m);font-size:.65rem;
+  letter-spacing:.1em;color:#4ecb8d;
+  display:flex;align-items:center;gap:.5rem;
+}
+.hud-status::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:#4ecb8d;animation:statusBlink 1s ease-in-out infinite;
+}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* Mars globe */
+.hud-body{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:center}
+@media(max-width:700px){.hud-body{grid-template-columns:1fr;text-align:center}}
+
+#mars-canvas{
+  width:220px;height:220px;border-radius:50%;
+  box-shadow:0 0 60px rgba(193,68,14,.4),0 0 120px rgba(193,68,14,.15);
+  display:block;
+}
+
+/* Gauge columns */
+.gauge-col{display:flex;flex-direction:column;gap:1.5rem}
+.gauge-item{cursor:pointer;position:relative}
+.gauge-label{
+  font-family:var(--font-m);font-size:.6rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;
+}
+.gauge-bar-wrap{
+  height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;
+  position:relative;
+}
+.gauge-bar{
+  height:100%;width:100%;
+  background:linear-gradient(90deg,var(--rust),var(--gold));
+  border-radius:3px;transform-origin:left;
+  transform:scaleX(0);
+  transition:transform 1.5s cubic-bezier(.4,0,.2,1);
+}
+.gauge-val{
+  font-family:var(--font-m);font-size:.9rem;color:var(--white);
+  margin-top:.4rem;
+}
+.gauge-tooltip{
+  position:absolute;bottom:calc(100% + 8px);left:0;
+  background:rgba(4,8,16,.95);border:1px solid rgba(232,105,58,.3);
+  padding:.6rem .9rem;
+  font-family:var(--font-b);font-size:.78rem;color:var(--pale);
+  white-space:nowrap;pointer-events:none;
+  opacity:0;transform:translateY(4px);
+  transition:opacity .2s,transform .2s;z-index:10;
+}
+.gauge-item:hover .gauge-tooltip{opacity:1;transform:translateY(0)}
+
+/* Parachute */
+.chute-wrap{
+  display:flex;justify-content:center;margin-bottom:1.5rem;
+  opacity:0;transform:translateY(-20px);transition:all .6s;
+}
+.chute-wrap.deployed{opacity:1;transform:translateY(0)}
+.chute-icon{font-size:2.5rem;animation:chuteSwing 2s ease-in-out infinite}
+@keyframes chuteSwing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+
+.hud-footer{
+  margin-top:2rem;padding-top:1rem;
+  border-top:1px solid rgba(255,255,255,.05);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
+}
+.hud-coords{font-family:var(--font-m);font-size:.6rem;color:var(--dim);letter-spacing:.08em}
+.landing-progress{display:flex;align-items:center;gap:1rem}
+.lp-label{font-family:var(--font-m);font-size:.6rem;color:var(--dim);letter-spacing:.1em}
+.lp-bar{width:120px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.lp-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--rust),var(--gold));border-radius:2px;transition:width .1s}
+
+/* Screen glow overlay */
+.heat-glow{
+  position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 80px rgba(193,68,14,0);
+  transition:box-shadow .5s;z-index:1;
+}
+
+/* ═══════════════════════════════════════════════
+   S5 — EXPLORATION
+═══════════════════════════════════════════════ */
+#s5-explore{
+  background:linear-gradient(to bottom, #0a0302 0%, #1a0800 30%, #2d0e00 60%, #180400 100%);
+  min-height:100dvh;overflow:hidden;
+}
+
+/* Parallax landscape */
+.landscape{
+  position:relative;height:60dvh;overflow:hidden;
+  margin-bottom:0;
+}
+.layer{position:absolute;bottom:0;left:0;right:0;pointer-events:none}
+
+/* Sky */
+.sky-layer{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,
+    #080205 0%,#1a0500 40%,#3d1200 70%,#5c2000 85%,#7a3500 100%
+  );
+}
+/* Stars in sky */
+.sky-layer::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    radial-gradient(1px 1px at 5% 10%,rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 20% 5%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 40% 15%,rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 60% 8%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 80% 12%,rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 95% 6%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 30% 20%,rgba(255,255,255,.2) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 18%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 3%,rgba(255,220,180,.7) 0%,transparent 100%);
+}
+
+/* Far mountains */
+.layer-far{
+  height:35%;
+  background:linear-gradient(to bottom, transparent 0%, #1a0800 60%, #240c00 100%);
+  clip-path:polygon(
+    0% 100%, 0% 60%, 4% 45%, 8% 60%, 12% 30%, 18% 55%, 22% 40%,
+    28% 65%, 34% 25%, 40% 50%, 46% 35%, 52% 55%, 56% 38%,
+    62% 60%, 66% 42%, 72% 28%, 78% 50%, 84% 35%, 90% 55%,
+    96% 40%, 100% 50%, 100% 100%
+  );
+}
+
+/* Mid terrain */
+.layer-mid{
+  height:22%;
+  background:linear-gradient(to bottom, transparent 0%, #2d0e00 40%, #3d1200 100%);
+  clip-path:polygon(
+    0% 100%, 0% 50%, 6% 30%, 14% 55%, 22% 20%, 30% 45%,
+    38% 35%, 46% 60%, 54% 25%, 62% 50%, 70% 40%, 78% 65%,
+    86% 30%, 94% 50%, 100% 35%, 100% 100%
+  );
+}
+
+/* Near ground */
+.layer-near{
+  height:12%;
+  background:#5c1e00;
+  clip-path:polygon(
+    0% 100%, 0% 40%, 8% 20%, 20% 50%, 32% 15%, 44% 45%,
+    56% 30%, 68% 55%, 80% 20%, 92% 40%, 100% 25%, 100% 100%
+  );
+}
+
+/* Ground floor */
+.ground{
+  height:80px;
+  background:linear-gradient(to bottom,#5c1e00,#3d1200);
+  position:relative;overflow:hidden;
+}
+.ground::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    90deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 30px,rgba(0,0,0,.15) 30px,rgba(0,0,0,.15) 31px
+  );
+}
+
+/* Dust devil */
+.dust-devil{
+  position:absolute;
+  width:30px;height:100px;
+  background:conic-gradient(from 0deg,transparent,rgba(193,68,14,.3),transparent);
+  border-radius:0 0 50% 50%;
+  animation:devilDrift 18s linear infinite, devilSpin 1.5s linear infinite;
+  bottom:0;left:-80px;
+  opacity:0;
+}
+@keyframes devilDrift{0%{left:-80px;opacity:0}10%{opacity:.6}90%{opacity:.4}100%{left:110%;opacity:0}}
+@keyframes devilSpin{0%{transform:scaleX(1)}50%{transform:scaleX(.4)}100%{transform:scaleX(1)}}
+
+/* Footprints */
+.footprints{
+  position:absolute;bottom:20px;left:10%;
+  display:flex;gap:25px;align-items:flex-end;
+}
+.footprint{
+  font-size:.9rem;opacity:0;
+  animation:none;
+}
+.footprint.visible{
+  animation:footReveal .4s ease forwards;
+}
+@keyframes footReveal{
+  0%{opacity:0;transform:scale(0) rotate(-20deg)}
+  60%{transform:scale(1.2) rotate(5deg)}
+  100%{opacity:.7;transform:scale(1) rotate(0deg)}
+}
+
+/* Discovery section */
+.explore-content{
+  padding:3rem 4rem 5rem;max-width:1100px;margin:0 auto;
+  position:relative;
+}
+@media(max-width:768px){.explore-content{padding:2rem 1.5rem 4rem}}
+
+.explore-intro{text-align:center;margin-bottom:3rem}
+.explore-intro .section-h2{font-size:clamp(1.5rem,4vw,2.5rem)}
+.explore-intro .section-p{max-width:500px;margin:0 auto}
+
+/* Discovery grid */
+.discovery-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;
+  margin-bottom:3rem;
+}
+@media(max-width:600px){.discovery-grid{grid-template-columns:1fr}}
+
+.discovery-card{
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(13,24,41,.4);
+  padding:2rem;text-align:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .3s;
+  opacity:.4;transform:scale(.97);
+}
+.discovery-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center,rgba(232,105,58,.1) 0%,transparent 70%);
+  opacity:0;transition:opacity .3s;
+}
+.discovery-card:hover{border-color:rgba(232,105,58,.35);opacity:.85;transform:scale(1)}
+.discovery-card:hover::before{opacity:1}
+.discovery-card.found{opacity:1;transform:scale(1);border-color:rgba(78,203,141,.4);background:rgba(26,102,69,.12)}
+.discovery-card.found::before{opacity:0}
+
+.disc-icon{font-size:2.5rem;margin-bottom:.8rem;display:block}
+.disc-name{
+  font-family:var(--font-d);font-size:.6rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--white);margin-bottom:.5rem;
+}
+.disc-hint{font-family:var(--font-b);font-size:.8rem;color:var(--dim)}
+.disc-found-badge{
+  display:none;
+  font-family:var(--font-m);font-size:.6rem;color:#4ecb8d;
+  margin-top:.5rem;letter-spacing:.1em;
+}
+.discovery-card.found .disc-found-badge{display:block}
+.discovery-card.found .disc-hint{display:none}
+
+/* Progress */
+.find-progress{
+  text-align:center;margin-bottom:3rem;
+  font-family:var(--font-m);font-size:.7rem;
+  color:var(--dim);letter-spacing:.15em;
+}
+.find-dots{display:flex;justify-content:center;gap:.5rem;margin-top:.5rem}
+.find-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.1);transition:background .4s}
+.find-dot.lit{background:var(--ember);box-shadow:0 0 8px var(--glow-r)}
+
+/* Mission Complete */
+#mission-complete{
+  text-align:center;padding:4rem 2rem;
+  opacity:0;transform:translateY(40px);
+  transition:all .8s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+#mission-complete.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+
+.complete-h{
+  font-family:var(--font-d);font-size:clamp(1.5rem,5vw,3rem);
+  font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--ember));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:1rem;
+}
+.complete-sub{
+  font-family:var(--font-b);font-weight:300;
+  font-size:1rem;color:var(--pale);margin-bottom:2rem;
+}
+
+.badge-display{
+  width:180px;height:180px;margin:0 auto 2rem;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(193,68,14,.3),rgba(8,15,30,.9));
+  border:2px solid var(--ember);
+  display:flex;align-items:center;justify-content:center;
+  font-size:5rem;
+  box-shadow:0 0 40px rgba(232,105,58,.3),0 0 80px rgba(193,68,14,.15);
+  animation:badgePulse 3s ease-in-out infinite;
+}
+@keyframes badgePulse{
+  0%,100%{box-shadow:0 0 40px rgba(232,105,58,.3),0 0 80px rgba(193,68,14,.15)}
+  50%{box-shadow:0 0 60px rgba(232,105,58,.5),0 0 120px rgba(193,68,14,.3)}
+}
+.restart-btn{
+  font-family:var(--font-d);font-size:.65rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--white);
+  background:transparent;border:1px solid rgba(255,255,255,.15);
+  padding:.8rem 2rem;cursor:pointer;
+  transition:all .3s;
+}
+.restart-btn:hover{border-color:var(--ember);color:var(--ember)}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:5000;
+  background:rgba(2,4,8,.85);backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+  padding:1rem;
+}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{
+  background:var(--nebula);border:1px solid rgba(232,105,58,.25);
+  max-width:440px;width:100%;padding:2.5rem;
+  position:relative;
+  transform:translateY(20px) scale(.97);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.modal-overlay.open .modal-box{transform:translateY(0) scale(1)}
+.modal-close{
+  position:absolute;top:1rem;right:1rem;
+  background:transparent;border:none;
+  color:var(--dim);font-size:1.2rem;cursor:pointer;
+  transition:color .2s;
+}
+.modal-close:hover{color:var(--white)}
+.modal-icon{font-size:3rem;margin-bottom:1rem;display:block;text-align:center}
+.modal-title{
+  font-family:var(--font-d);font-size:.8rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ember);
+  margin-bottom:1rem;text-align:center;
+}
+.modal-body{font-family:var(--font-b);font-size:.95rem;color:var(--pale);line-height:1.7}
+.modal-fact{
+  margin-top:1rem;padding:.8rem 1rem;
+  background:rgba(193,68,14,.08);border-left:2px solid var(--rust);
+  font-family:var(--font-m);font-size:.75rem;color:var(--ember);
+}
+
+/* ═══════════════════════════════════════════════
+   LIFTOFF FLASH
+═══════════════════════════════════════════════ */
+#launch-flash{
+  position:fixed;inset:0;z-index:8000;
+  background:var(--gold);opacity:0;pointer-events:none;
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s,transform .8s}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+  #dot-nav{right:.6rem}
+  .dot-btn::after{display:none}
+  .crew-row{gap:.8rem}
+  .crew-card{width:120px}
+  .crew-inner{height:165px}
+  #mars-canvas{width:150px;height:150px}
+}
+</style>
+</head>
+<body class="loading">
+
+<!-- Custom Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Launch Flash -->
+<div id="launch-flash"></div>
+
+<!-- ════════ PRELOADER ════════ -->
+<div id="preloader">
+  <div class="pl-title">Mission Ares VII · Pre-Launch Sequence</div>
+  <div class="pl-rocket">🚀</div>
+  <div class="pl-bar-wrap"><div class="pl-bar" id="pl-bar"></div></div>
+  <div class="pl-pct" id="pl-pct">0%</div>
+  <div class="pl-status" id="pl-status">Initialising systems…</div>
+</div>
+
+<!-- ════════ DOT NAV ════════ -->
+<nav id="dot-nav" aria-label="Section navigation">
+  <button class="dot-btn active" data-target="s1-hero"    data-label="Mission Briefing"></button>
+  <button class="dot-btn"        data-target="s2-launch"  data-label="Launch"></button>
+  <button class="dot-btn"        data-target="s3-transit" data-label="Deep Space"></button>
+  <button class="dot-btn"        data-target="s4-landing" data-label="Atmospheric Entry"></button>
+  <button class="dot-btn"        data-target="s5-explore" data-label="Exploration"></button>
+</nav>
+
+<!-- ════════════════════════════════════════
+     S1 — HERO
+════════════════════════════════════════ -->
+<section id="s1-hero">
+  <canvas id="starfield-canvas"></canvas>
+
+  <div class="hero-inner">
+    <p class="mission-tag" id="hero-tag">◈ Mission Ares VII · Earth Departure</p>
+    <h1 class="hero-h1" id="hero-h1">Journey<br>to Mars</h1>
+    <p class="hero-sub" id="hero-sub">225 million kilometres. One direction. No return.<br>The story of humanity's greatest expedition.</p>
+
+    <div class="hero-meta" id="hero-meta">
+      <div class="meta-item">
+        <span class="meta-val">225M</span>
+        <span class="meta-lbl">Kilometres</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-val">210</span>
+        <span class="meta-lbl">Days in transit</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-val">3</span>
+        <span class="meta-lbl">Crew members</span>
+      </div>
+    </div>
+
+    <button class="cta-btn" id="hero-cta" onclick="scrollTo2()">
+      <span>▶ Begin Mission</span>
+    </button>
+  </div>
+
+  <!-- Crew Cards -->
+  <div class="crew-row" id="crew-row">
+    <div class="crew-card" tabindex="0" aria-label="Commander Yara Osei">
+      <div class="crew-inner">
+        <div class="crew-front">
+          <div class="crew-avatar">👩🏾‍🚀</div>
+          <div class="crew-name">Yara Osei</div>
+          <div class="crew-role">Commander</div>
+        </div>
+        <div class="crew-back">
+          <div class="crew-bio">Former ISS Commander. 3 deep-space EVAs. Specialises in mission-critical decision-making under pressure.</div>
+        </div>
+      </div>
+    </div>
+    <div class="crew-card" tabindex="0" aria-label="Engineer Kenji Mori">
+      <div class="crew-inner">
+        <div class="crew-front">
+          <div class="crew-avatar">👨🏻‍🚀</div>
+          <div class="crew-name">Kenji Mori</div>
+          <div class="crew-role">Chief Engineer</div>
+        </div>
+        <div class="crew-back">
+          <div class="crew-bio">Designed the Ares VII propulsion system. Expert in zero-G repair operations and reactor maintenance.</div>
+        </div>
+      </div>
+    </div>
+    <div class="crew-card" tabindex="0" aria-label="Scientist Dr. Amara Patel">
+      <div class="crew-inner">
+        <div class="crew-front">
+          <div class="crew-avatar">👩🏽‍🔬</div>
+          <div class="crew-name">Dr. A. Patel</div>
+          <div class="crew-role">Astrobiologist</div>
+        </div>
+        <div class="crew-back">
+          <div class="crew-bio">Lead Mars biosignature researcher. Developed the soil analysis protocols used by Perseverance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll to launch</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9" transform="rotate(0)"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     S2 — LAUNCH
+════════════════════════════════════════ -->
+<section id="s2-launch">
+  <div class="atmo-overlay" id="atmo-overlay"></div>
+
+  <div class="launch-left">
+    <div class="section-eyebrow">Section 02</div>
+    <h2 class="section-h2">T-Minus<br>Zero</h2>
+    <p class="section-p">The Kennedy Space Center falls silent. Seven years of preparation have led to this moment. Complete the pre-launch sequence to initiate ignition.</p>
+
+    <div class="checklist-panel">
+      <div class="check-item" id="chk-fuel" onclick="toggleCheck('chk-fuel')" tabindex="0" role="button" aria-pressed="false">
+        <div class="check-box">✓</div>
+        <span class="check-label">⚡ Propulsion Systems</span>
+        <span class="check-status">STANDBY</span>
+      </div>
+      <div class="check-item" id="chk-nav" onclick="toggleCheck('chk-nav')" tabindex="0" role="button" aria-pressed="false">
+        <div class="check-box">✓</div>
+        <span class="check-label">🧭 Navigation &amp; Telemetry</span>
+        <span class="check-status">STANDBY</span>
+      </div>
+      <div class="check-item" id="chk-life" onclick="toggleCheck('chk-life')" tabindex="0" role="button" aria-pressed="false">
+        <div class="check-box">✓</div>
+        <span class="check-label">🫁 Life Support Systems</span>
+        <span class="check-status">STANDBY</span>
+      </div>
+    </div>
+
+    <button class="launch-btn" id="launch-btn" disabled aria-label="Initiate launch sequence">
+      <span id="launch-btn-txt">— COMPLETE CHECKLIST TO ARM —</span>
+    </button>
+  </div>
+
+  <div class="launch-right">
+    <!-- Rocket SVG -->
+    <div class="rocket-scene" id="rocket-scene">
+      <svg class="rocket-svg" viewBox="0 0 120 280" fill="none" xmlns="http://www.w3.org/2000/svg" id="rocket-body">
+        <!-- Body -->
+        <path d="M60 10 C40 10 28 40 28 80 L28 200 L60 210 L92 200 L92 80 C92 40 80 10 60 10Z" fill="url(#bodyGrad)"/>
+        <!-- Nose cone -->
+        <path d="M60 10 C50 10 40 25 35 45 L60 35 L85 45 C80 25 70 10 60 10Z" fill="url(#noseGrad)"/>
+        <!-- Window -->
+        <circle cx="60" cy="100" r="14" fill="url(#windowGrad)" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <circle cx="60" cy="100" r="9" fill="rgba(122,184,232,.3)"/>
+        <ellipse cx="55" cy="96" rx="3" ry="2" fill="rgba(255,255,255,.4)"/>
+        <!-- Fins left -->
+        <path d="M28 180 L8 220 L28 210Z" fill="url(#finGrad)"/>
+        <path d="M28 160 L14 190 L28 185Z" fill="url(#finGrad)" opacity=".7"/>
+        <!-- Fins right -->
+        <path d="M92 180 L112 220 L92 210Z" fill="url(#finGrad)"/>
+        <path d="M92 160 L106 190 L92 185Z" fill="url(#finGrad)" opacity=".7"/>
+        <!-- Engine nozzles -->
+        <ellipse cx="50" cy="208" rx="8" ry="4" fill="#0d1829"/>
+        <ellipse cx="70" cy="208" rx="8" ry="4" fill="#0d1829"/>
+        <ellipse cx="60" cy="210" rx="6" ry="3" fill="#080f1e"/>
+        <!-- Detail lines -->
+        <line x1="28" y1="130" x2="92" y2="130" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+        <line x1="28" y1="160" x2="92" y2="160" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <!-- Mission patch area -->
+        <rect x="42" y="140" width="36" height="16" rx="2" fill="rgba(193,68,14,.15)" stroke="rgba(232,105,58,.2)" stroke-width="1"/>
+        <text x="60" y="151" text-anchor="middle" font-family="monospace" font-size="6" fill="rgba(232,105,58,.7)">ARES VII</text>
+        <defs>
+          <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#c8d8ee"/>
+            <stop offset="50%" stop-color="#f0ece4"/>
+            <stop offset="100%" stop-color="#a0b4cc"/>
+          </linearGradient>
+          <linearGradient id="noseGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f0ece4"/>
+            <stop offset="100%" stop-color="#c8d8ee"/>
+          </linearGradient>
+          <radialGradient id="windowGrad">
+            <stop offset="0%" stop-color="#1a2840"/>
+            <stop offset="100%" stop-color="#080f1e"/>
+          </radialGradient>
+          <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#c1440e"/>
+            <stop offset="100%" stop-color="#e8693a"/>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div class="exhaust-wrap" id="exhaust-wrap">
+        <div class="exhaust-flame"></div>
+        <div class="exhaust-flame" style="animation-delay:.05s"></div>
+        <div class="exhaust-flame" style="animation-delay:.1s"></div>
+        <div class="exhaust-flame" style="animation-delay:.05s"></div>
+      </div>
+    </div>
+
+    <!-- Countdown ring -->
+    <div class="countdown-ring" id="countdown-ring">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="50" stroke-width="4" fill="none"/>
+        <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="50" stroke-width="4" fill="none"/>
+      </svg>
+      <div class="ring-center">
+        <span class="ring-num" id="ring-num">10</span>
+        <span class="ring-lbl">seconds</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     S3 — TRANSIT
+════════════════════════════════════════ -->
+<section id="s3-transit">
+  <div class="transit-header">
+    <div class="section-eyebrow">Section 03</div>
+    <h2 class="section-h2" style="font-size:clamp(1.8rem,4vw,3rem)">7 Months in<br>the Void</h2>
+    <p class="section-p" style="max-width:480px;margin:0 auto">The Earth recedes to a pale blue dot. Ahead, a rust-coloured world waits. Every day an identical silence. Every moment — extraordinary.</p>
+  </div>
+
+  <!-- Orbit SVG map -->
+  <div class="orbit-map reveal">
+    <svg class="orbit-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sun -->
+      <circle cx="100" cy="160" r="28" fill="url(#sunGrad)" filter="url(#sunGlow)"/>
+      <circle cx="100" cy="160" r="18" fill="#fff7c0"/>
+      <!-- Earth orbit ring -->
+      <ellipse cx="100" cy="160" rx="160" ry="60" stroke="rgba(122,184,232,.12)" stroke-width="1" fill="none" stroke-dasharray="4 6"/>
+      <!-- Mars orbit ring -->
+      <ellipse cx="100" cy="160" rx="280" ry="105" stroke="rgba(193,68,14,.1)" stroke-width="1" fill="none" stroke-dasharray="4 8"/>
+      <!-- Transfer orbit path (Hohmann) -->
+      <path id="orbit-path"
+        d="M 220 115 Q 350 -20 580 185"
+        stroke="url(#pathGrad)" stroke-width="2"
+        fill="none" stroke-linecap="round"
+        stroke-dasharray="600" stroke-dashoffset="600"
+        opacity=".9"/>
+      <!-- Earth -->
+      <circle cx="220" cy="115" r="14" fill="url(#earthGrad)" filter="url(#planetGlow)"/>
+      <text x="220" y="140" text-anchor="middle" font-family="monospace" font-size="9" fill="rgba(122,184,232,.7)">EARTH</text>
+      <!-- Mars -->
+      <circle cx="580" cy="185" r="10" fill="url(#marsGrad)" filter="url(#marsGlow)"/>
+      <text x="580" y="208" text-anchor="middle" font-family="monospace" font-size="9" fill="rgba(193,68,14,.7)">MARS</text>
+      <!-- Spacecraft dot (animates along path) -->
+      <circle id="spacecraft-dot" r="5" fill="var(--gold)" filter="url(#shipGlow)">
+        <animateMotion dur="4s" repeatCount="indefinite" begin="indefinite">
+          <mpath href="#orbit-path"/>
+        </animateMotion>
+      </circle>
+      <!-- Asteroid belt hint -->
+      <g opacity=".25">
+        <circle cx="390" cy="120" r="2" fill="#888"/>
+        <circle cx="415" cy="105" r="1.5" fill="#888"/>
+        <circle cx="440" cy="118" r="2.5" fill="#888"/>
+        <circle cx="460" cy="100" r="1.5" fill="#888"/>
+        <circle cx="480" cy="115" r="2" fill="#888"/>
+        <circle cx="395" cy="135" r="1.5" fill="#888"/>
+        <circle cx="425" cy="140" r="2" fill="#888"/>
+        <circle cx="455" cy="130" r="1.5" fill="#888"/>
+        <circle cx="470" cy="142" r="2.5" fill="#888"/>
+      </g>
+      <defs>
+        <radialGradient id="sunGrad"><stop offset="0%" stop-color="#fff7c0"/><stop offset="60%" stop-color="#f4a24b"/><stop offset="100%" stop-color="#c1440e"/></radialGradient>
+        <radialGradient id="earthGrad"><stop offset="0%" stop-color="#4ecb8d"/><stop offset="50%" stop-color="#1e6aad"/><stop offset="100%" stop-color="#0a2040"/></radialGradient>
+        <radialGradient id="marsGrad"><stop offset="0%" stop-color="#e8693a"/><stop offset="60%" stop-color="#c1440e"/><stop offset="100%" stop-color="#6b2008"/></radialGradient>
+        <linearGradient id="pathGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7ab8e8"/><stop offset="100%" stop-color="#e8693a"/>
+        </linearGradient>
+        <filter id="sunGlow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="planetGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="marsGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="shipGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="225000000" data-suffix="km" id="stat-dist">0 km</span>
+      <span class="stat-lbl">Distance Travelled</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="210" data-suffix=" days" id="stat-days">0 days</span>
+      <span class="stat-lbl">Days in Transit</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="86400" data-suffix="" id="stat-km">0</span>
+      <span class="stat-lbl">km/h Cruise Speed</span>
+    </div>
+  </div>
+
+  <!-- Captain's log slider -->
+  <div class="log-section reveal">
+    <div class="log-title">Captain's Log</div>
+    <div class="log-slider-wrap" id="log-slider-wrap">
+      <div class="log-track" id="log-track">
+        <div class="log-card">
+          <div class="log-day">Day 001 — Departure</div>
+          <p class="log-text">Earth is still visible from the observation deck. A perfect blue marble receding slowly into the dark. Yara says she won't look back after today. I understand why.</p>
+          <span class="log-mood">🌍</span>
+        </div>
+        <div class="log-card">
+          <div class="log-day">Day 047 — Deep Space</div>
+          <p class="log-text">Reactor B is running 2% hotter than nominal. Kenji spent six hours in the maintenance shaft. His solution: percussive maintenance. It worked. Log entry over.</p>
+          <span class="log-mood">🔧</span>
+        </div>
+        <div class="log-card">
+          <div class="log-day">Day 089 — Mid-Transit</div>
+          <p class="log-text">Dr. Patel discovered an irregularity in the soil sample protocols. Recalibrated the spectrometers for the fourth time. The research never sleeps, even 100 million km from the lab.</p>
+          <span class="log-mood">🔬</span>
+        </div>
+        <div class="log-card">
+          <div class="log-day">Day 134 — Asteroid Belt</div>
+          <p class="log-text">Navigation routed us through a sparse corridor. Three rocks larger than the ship passed within 40,000 km. Beautiful. Terrifying. The silence between them is absolute.</p>
+          <span class="log-mood">☄️</span>
+        </div>
+        <div class="log-card">
+          <div class="log-day">Day 178 — Mars Visible</div>
+          <p class="log-text">First visual confirmation — a rust-coloured point of light, brighter than any star. The crew gathered at the observation window and said nothing for a long time. Nothing needed to be said.</p>
+          <span class="log-mood">🔴</span>
+        </div>
+        <div class="log-card">
+          <div class="log-day">Day 210 — Orbit Insertion</div>
+          <p class="log-text">Orbital burn complete. We are in Mars orbit. Below us, Jezero Crater. Tomorrow we descend. The weight of what this means settles like Martian dust — quietly, everywhere, all at once.</p>
+          <span class="log-mood">🚀</span>
+        </div>
+      </div>
+    </div>
+    <div class="log-nav">
+      <button class="log-nav-btn" id="log-prev" onclick="slideLog(-1)" aria-label="Previous log entry">‹</button>
+      <button class="log-nav-btn" id="log-next" onclick="slideLog(1)"  aria-label="Next log entry">›</button>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     S4 — LANDING / HUD
+════════════════════════════════════════ -->
+<section id="s4-landing">
+  <div class="heat-glow" id="heat-glow"></div>
+
+  <div class="hud-frame">
+    <div class="hud-header">
+      <div class="hud-title">▸ ENTRY INTERFACE — ARES VII</div>
+      <div class="hud-status" id="hud-status">SYSTEMS NOMINAL</div>
+    </div>
+
+    <div class="chute-wrap" id="chute-wrap">
+      <div class="chute-icon">🪂</div>
+      <span style="font-family:var(--font-m);font-size:.6rem;color:#4ecb8d;margin-left:.5rem">PARACHUTE DEPLOYED</span>
+    </div>
+
+    <div class="hud-body">
+      <!-- Left gauges -->
+      <div class="gauge-col">
+        <div class="gauge-item">
+          <div class="gauge-label">Altitude</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-alt" style="background:linear-gradient(90deg,#1e6aad,var(--ice))"></div></div>
+          <div class="gauge-val" id="gval-alt">125 km</div>
+          <div class="gauge-tooltip">Altitude above Mars surface during atmospheric entry. Entry interface begins at ~125 km.</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-label">Velocity</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-vel"></div></div>
+          <div class="gauge-val" id="gval-vel">21,000 km/h</div>
+          <div class="gauge-tooltip">Entry velocity. Aeroshell drag decelerates from 21,000 km/h to ~1,600 km/h before parachute deploys.</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-label">Heat Shield Temp</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-temp" style="background:linear-gradient(90deg,var(--rust),#ff2200)"></div></div>
+          <div class="gauge-val" id="gval-temp">1,650 °C</div>
+          <div class="gauge-tooltip">Peak aeroshell temperature during entry. Real Perseverance entry peak: ~1,300°C. PICA-X heat shield rated to 3,000°C.</div>
+        </div>
+      </div>
+
+      <!-- Mars globe -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
+        <canvas id="mars-canvas" width="220" height="220"></canvas>
+        <div style="font-family:var(--font-m);font-size:.58rem;color:var(--dim);letter-spacing:.1em;text-align:center">
+          ⬤ Jezero Crater — Landing Zone
+        </div>
+      </div>
+
+      <!-- Right gauges -->
+      <div class="gauge-col">
+        <div class="gauge-item">
+          <div class="gauge-label">Parachute Status</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-chute" style="background:linear-gradient(90deg,#1a6645,#4ecb8d)"></div></div>
+          <div class="gauge-val" id="gval-chute">Stowed</div>
+          <div class="gauge-tooltip">Supersonic parachute deploys at ~11 km altitude, decelerating to ~100 m/s before sky-crane activation.</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-label">G-Force Load</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-g" style="background:linear-gradient(90deg,#5a1aad,#c08af0)"></div></div>
+          <div class="gauge-val" id="gval-g">12.4 G</div>
+          <div class="gauge-tooltip">Peak deceleration experienced by crew. Human limit ~9G sustained. Entry peak ~12G but brief (milliseconds).</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-label">Signal Delay</div>
+          <div class="gauge-bar-wrap"><div class="gauge-bar" id="gauge-sig" style="background:linear-gradient(90deg,#0e5c6b,#4ec4cb)"></div></div>
+          <div class="gauge-val" id="gval-sig">12.5 min</div>
+          <div class="gauge-tooltip">One-way signal delay to Earth at time of entry. 7 minutes of terror means the crew is on their own — mission control can only watch.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-footer">
+      <div class="hud-coords" id="hud-coords">18.4446° N · 77.5763° E · Jezero Crater</div>
+      <div class="landing-progress">
+        <span class="lp-label">ENTRY PROGRESS</span>
+        <div class="lp-bar"><div class="lp-fill" id="lp-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     S5 — EXPLORATION
+════════════════════════════════════════ -->
+<section id="s5-explore">
+  <!-- Parallax landscape -->
+  <div class="landscape">
+    <div class="sky-layer"></div>
+    <div class="layer layer-far"  id="layer-far"></div>
+    <div class="layer layer-mid"  id="layer-mid"></div>
+    <div class="layer layer-near" id="layer-near"></div>
+    <div class="ground">
+      <div class="dust-devil" id="dust-devil"></div>
+      <div class="footprints" id="footprints">
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+        <span class="footprint">👣</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="explore-content">
+    <div class="explore-intro reveal">
+      <div class="section-eyebrow" style="justify-content:center">Section 05 — First Steps</div>
+      <h2 class="section-h2">We Have Arrived</h2>
+      <p class="section-p">The hatch opens. Martian dust coats your visor. The horizon is rust-orange, the sky a pale butterscotch. You are the first human beings to stand on another world. Explore.</p>
+    </div>
+
+    <div class="find-progress" id="find-progress">
+      <div>Discoveries: <span id="find-count">0</span> / 3</div>
+      <div class="find-dots">
+        <div class="find-dot" id="fd0"></div>
+        <div class="find-dot" id="fd1"></div>
+        <div class="find-dot" id="fd2"></div>
+      </div>
+    </div>
+
+    <div class="discovery-grid">
+      <div class="discovery-card" id="disc-0" onclick="discover(0)" tabindex="0" role="button" aria-label="Examine Basalt Rock Formation">
+        <span class="disc-icon">🪨</span>
+        <div class="disc-name">Basalt Formation</div>
+        <div class="disc-hint">Tap to examine…</div>
+        <div class="disc-found-badge">✓ CATALOGUED</div>
+      </div>
+      <div class="discovery-card" id="disc-1" onclick="discover(1)" tabindex="0" role="button" aria-label="Analyse Subsurface Ice">
+        <span class="disc-icon">🧊</span>
+        <div class="disc-name">Subsurface Ice</div>
+        <div class="disc-hint">Tap to analyse…</div>
+        <div class="disc-found-badge">✓ CATALOGUED</div>
+      </div>
+      <div class="discovery-card" id="disc-2" onclick="discover(2)" tabindex="0" role="button" aria-label="Track Dust Storm">
+        <span class="disc-icon">🌪️</span>
+        <div class="disc-name">Dust Devil Event</div>
+        <div class="disc-hint">Tap to record…</div>
+        <div class="disc-found-badge">✓ CATALOGUED</div>
+      </div>
+    </div>
+
+    <div id="mission-complete" role="status" aria-live="polite">
+      <div class="badge-display">🏆</div>
+      <h2 class="complete-h">Mission Complete</h2>
+      <p class="complete-sub">Humanity has taken its first steps on Mars.<br>The universe is a little smaller tonight.</p>
+      <button class="restart-btn" onclick="restartMission()">↺ Replay Mission</button>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ MODAL ════════ -->
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+    <span class="modal-icon" id="modal-icon">🪨</span>
+    <div class="modal-title" id="modal-title">Discovery</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-fact" id="modal-fact"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+/* ─── CURSOR ─── */
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+  ring.style.left   = e.clientX + 'px';
+  ring.style.top    = e.clientY + 'px';
+});
+
+/* ─── PRELOADER ─── */
+const statuses = [
+  'Initialising propulsion systems…',
+  'Calibrating navigation arrays…',
+  'Loading star-field renderer…',
+  'Pressurising crew compartment…',
+  'Aligning solar panels…',
+  'Final systems check… all green.',
+  'Mission ready. T-minus launch.'
+];
+let pct = 0;
+const plBar = document.getElementById('pl-bar');
+const plPct = document.getElementById('pl-pct');
+const plStatus = document.getElementById('pl-status');
+
+const plInterval = setInterval(() => {
+  pct += Math.random() * 12 + 4;
+  if (pct >= 100) { pct = 100; clearInterval(plInterval); }
+  plBar.style.width = pct + '%';
+  plPct.textContent = Math.floor(pct) + '%';
+  plStatus.textContent = statuses[Math.min(Math.floor(pct / 14.5), statuses.length - 1)];
+  if (pct >= 100) setTimeout(hidePL, 600);
+}, 180);
+
+function hidePL() {
+  gsap.to('#preloader', {opacity:0, duration:.8, onComplete:() => {
+    document.getElementById('preloader').style.display = 'none';
+    document.body.classList.remove('loading');
+    initHeroAnimations();
+    initScrollTriggers();
+    initStarfield();
+    initMarsGlobe();
+    initSpacecraftAnim();
+    setTimeout(() => document.getElementById('dust-devil').style.animationPlayState = 'running', 1000);
+  }});
+}
+
+/* ─── HERO ANIMATIONS ─── */
+function initHeroAnimations() {
+  const tl = gsap.timeline();
+  tl.to('#hero-tag',  {opacity:1, y:0, duration:.7, ease:'power2.out'}, 0)
+    .to('#hero-h1',   {opacity:1, y:0, duration:.9, ease:'power3.out'}, .2)
+    .to('#hero-sub',  {opacity:1, y:0, duration:.7, ease:'power2.out'}, .5)
+    .to('#hero-meta', {opacity:1, duration:.6, ease:'power2.out'}, .8)
+    .to('.cta-btn',   {opacity:1, duration:.6, ease:'power2.out'}, 1)
+    .to('#crew-row',  {opacity:1, y:0, duration:.8, ease:'power2.out'}, 1.2);
+}
+
+/* ─── THREE.JS STARFIELD ─── */
+function initStarfield() {
+  const canvas = document.getElementById('starfield-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:false, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(canvas.parentElement.offsetWidth, canvas.parentElement.offsetHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, canvas.parentElement.offsetWidth / canvas.parentElement.offsetHeight, .1, 2000);
+  camera.position.z = 400;
+
+  const count = window.innerWidth < 768 ? 3000 : 8000;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pos[i*3]   = (Math.random()-.5)*2000;
+    pos[i*3+1] = (Math.random()-.5)*2000;
+    pos[i*3+2] = (Math.random()-.5)*2000;
+    const hue = Math.random() < .15 ? .6 : (Math.random() < .1 ? .07 : 0);
+    col[i*3]   = hue === .6 ? .7 : (hue === .07 ? 1 : 1);
+    col[i*3+1] = hue === .6 ? .8 : (hue === .07 ? .85 : .95);
+    col[i*3+2] = hue === .6 ? 1   : (hue === .07 ? .5  : .9);
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({size:.8, vertexColors:true, transparent:true, opacity:.85});
+  const stars = new THREE.Points(geo, mat);
+  scene.add(stars);
+
+  let mx = 0, my = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - .5) * .3;
+    my = (e.clientY / window.innerHeight - .5) * .3;
+  });
+
+  let rafStar;
+  function animStar() {
+    rafStar = requestAnimationFrame(animStar);
+    stars.rotation.y += .00015 + mx * .0008;
+    stars.rotation.x += .00005 + my * .0005;
+    renderer.render(scene, camera);
+  }
+  animStar();
+
+  // Pause when off screen
+  const obs = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) cancelAnimationFrame(rafStar);
+    else animStar();
+  });
+  obs.observe(document.getElementById('s1-hero'));
+
+  window.addEventListener('resize', () => {
+    const w = canvas.parentElement.offsetWidth;
+    const h = canvas.parentElement.offsetHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  });
+}
+
+/* ─── MARS GLOBE (THREE.JS) ─── */
+function initMarsGlobe() {
+  const canvas = document.getElementById('mars-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+  renderer.setSize(220, 220);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, .1, 100);
+  camera.position.z = 3;
+
+  // Procedural Mars texture
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = 512; offCanvas.height = 256;
+  const ctx = offCanvas.getContext('2d');
+  // Base gradient
+  const grd = ctx.createLinearGradient(0,0,512,256);
+  grd.addColorStop(0,'#8b3a0f');
+  grd.addColorStop(.3,'#c1440e');
+  grd.addColorStop(.6,'#9b3d12');
+  grd.addColorStop(1,'#7a2d08');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,512,256);
+  // Add terrain noise
+  for (let i = 0; i < 4000; i++) {
+    const x = Math.random()*512, y = Math.random()*256;
+    const r = Math.random()*8+2;
+    const br = Math.random()>.5 ? 'rgba(193,68,14,' : 'rgba(60,15,5,';
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle = br + (Math.random()*.4+.1)+')';
+    ctx.fill();
+  }
+  // Polar cap
+  ctx.beginPath();
+  ctx.ellipse(256,10,60,25,0,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(220,220,255,.35)';
+  ctx.fill();
+  // Valles Marineris hint
+  ctx.beginPath();
+  ctx.moveTo(160,120);ctx.lineTo(350,130);
+  ctx.strokeStyle='rgba(80,20,5,.6)';ctx.lineWidth=8;ctx.stroke();
+  // Jezero crater landing zone
+  ctx.beginPath();
+  ctx.arc(300,100,18,0,Math.PI*2);
+  ctx.strokeStyle='rgba(244,162,75,.8)';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(300,100,3,0,Math.PI*2);
+  ctx.fillStyle='rgba(244,162,75,1)';ctx.fill();
+  // "JEZERO" text
+  ctx.font='bold 10px monospace';ctx.fillStyle='rgba(244,162,75,.8)';
+  ctx.fillText('JEZERO',308,100);
+
+  const texture = new THREE.CanvasTexture(offCanvas);
+  const geo = new THREE.SphereGeometry(1, 64, 64);
+  const mat = new THREE.MeshPhongMaterial({map:texture, shininess:8});
+  const mars = new THREE.Mesh(geo, mat);
+  scene.add(mars);
+
+  // Atmosphere glow
+  const atmGeo = new THREE.SphereGeometry(1.05, 32, 32);
+  const atmMat = new THREE.MeshBasicMaterial({
+    color:0xc1440e, transparent:true, opacity:.08, side:THREE.BackSide
+  });
+  scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+  // Lights
+  const sun = new THREE.DirectionalLight(0xffa070, 1.5);
+  sun.position.set(5,2,4);
+  scene.add(sun);
+  scene.add(new THREE.AmbientLight(0x200a00, .6));
+
+  // Drag to rotate
+  let isDragging=false, prevX=0, prevY=0, velX=0, velY=0;
+  canvas.style.cursor='grab';
+  canvas.addEventListener('mousedown',  e=>{isDragging=true;prevX=e.clientX;prevY=e.clientY;velX=0;velY=0;canvas.style.cursor='grabbing';});
+  canvas.addEventListener('touchstart', e=>{isDragging=true;prevX=e.touches[0].clientX;prevY=e.touches[0].clientY;},{passive:true});
+  window.addEventListener('mouseup',  ()=>{isDragging=false;canvas.style.cursor='grab';});
+  window.addEventListener('touchend', ()=>{isDragging=false;});
+  window.addEventListener('mousemove', e=>{
+    if(!isDragging)return;
+    velX=(e.clientX-prevX)*.005;velY=(e.clientY-prevY)*.005;
+    mars.rotation.y+=velX;mars.rotation.x+=velY;
+    prevX=e.clientX;prevY=e.clientY;
+  });
+  window.addEventListener('touchmove', e=>{
+    if(!isDragging)return;
+    const dx=(e.touches[0].clientX-prevX)*.005;const dy=(e.touches[0].clientY-prevY)*.005;
+    mars.rotation.y+=dx;mars.rotation.x+=dy;
+    prevX=e.touches[0].clientX;prevY=e.touches[0].clientY;
+  },{passive:true});
+
+  let rafMars;
+  function animMars() {
+    rafMars = requestAnimationFrame(animMars);
+    if(!isDragging){
+      mars.rotation.y += .003;
+      velX*=.95;velY*=.95;
+    } else {
+      mars.rotation.y+=velX;mars.rotation.x+=velY;
+    }
+    renderer.render(scene, camera);
+  }
+  animMars();
+}
+
+/* ─── SPACECRAFT ANIMATION ─── */
+function initSpacecraftAnim() {
+  const dot = document.getElementById('spacecraft-dot');
+  const motion = dot.querySelector('animateMotion');
+  if(motion) motion.beginElement();
+}
+
+/* ─── SCROLL TRIGGERS ─── */
+function initScrollTriggers() {
+  gsap.registerPlugin(ScrollTrigger);
+
+  // DOT NAV update
+  const sections = ['s1-hero','s2-launch','s3-transit','s4-landing','s5-explore'];
+  const dots = document.querySelectorAll('.dot-btn');
+  sections.forEach((id, i) => {
+    ScrollTrigger.create({
+      trigger: '#' + id,
+      start: 'top 60%',
+      end: 'bottom 40%',
+      onToggle: ({isActive}) => {
+        if(isActive) dots.forEach((d,j) => d.classList.toggle('active', i===j));
+      }
+    });
+  });
+
+  // HERO parallax — starfield moves slower
+  gsap.to('#starfield-canvas', {
+    yPercent: -25,
+    ease: 'none',
+    scrollTrigger: {trigger:'#s1-hero', start:'top top', end:'bottom top', scrub:1}
+  });
+
+  // S2 — Atmosphere colour shift on scroll
+  ScrollTrigger.create({
+    trigger: '#s2-launch',
+    start: 'top 80%',
+    end: 'bottom 20%',
+    scrub: 1,
+    onUpdate: ({progress}) => {
+      const el = document.getElementById('atmo-overlay');
+      const r = Math.round(progress*180);
+      const g = Math.round(progress*60);
+      el.style.background = `linear-gradient(to top,rgba(${r},${g},10,${progress*.35}),rgba(20,40,100,${(1-progress)*.2}))`;
+    }
+  });
+
+  // S3 — SVG orbit path draw
+  gsap.fromTo('#orbit-path', {strokeDashoffset:600}, {
+    strokeDashoffset: 0,
+    ease: 'none',
+    scrollTrigger: {trigger:'#s3-transit', start:'top 70%', end:'bottom 20%', scrub:true}
+  });
+
+  // S3 — Stat counters
+  document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 85%',
+      once: true,
+      onEnter: () => {
+        const target = +el.dataset.target;
+        const suffix = el.dataset.suffix;
+        gsap.to({val:0}, {
+          val: target, duration: 2, ease:'power2.out',
+          onUpdate() {
+            const v = Math.floor(this.targets()[0].val);
+            el.textContent = (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString()) + suffix;
+          }
+        });
+      }
+    });
+  });
+
+  // S3 — Parallax log section
+  gsap.to('#s3-transit .transit-header', {
+    y: -40, ease:'none',
+    scrollTrigger: {trigger:'#s3-transit', start:'top bottom', end:'bottom top', scrub:.5}
+  });
+
+  // S4 — Pin landing section, animate gauges
+  const landTL = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#s4-landing',
+      start: 'top top',
+      end: '+=200%',
+      pin: true,
+      scrub: 1.5,
+      onUpdate: ({progress}) => {
+        const p = progress;
+
+        // Gauge bars
+        document.getElementById('gauge-alt').style.transform  = `scaleX(${1 - p})`;
+        document.getElementById('gauge-vel').style.transform  = `scaleX(${1 - p})`;
+        document.getElementById('gauge-temp').style.transform = `scaleX(${p < .5 ? p*2 : 1 - (p-.5)*2})`;
+        document.getElementById('gauge-chute').style.transform= `scaleX(${p > .6 ? (p-.6)/.4 : 0})`;
+        document.getElementById('gauge-g').style.transform    = `scaleX(${p < .4 ? p/.4 : 1-(p-.4)/.6})`;
+        document.getElementById('gauge-sig').style.transform  = `scaleX(.85)`;
+
+        // Values
+        document.getElementById('gval-alt').textContent  = Math.round(125*(1-p)) + ' km';
+        document.getElementById('gval-vel').textContent  = Math.round(21000*(1-p*.9)).toLocaleString() + ' km/h';
+        document.getElementById('gval-temp').textContent = Math.round(p < .5 ? 1650*(p*2) : 1650*(1-(p-.5)*2)) + ' °C';
+        document.getElementById('gval-chute').textContent= p > .6 ? 'DEPLOYED ✓' : 'Stowed';
+        document.getElementById('gval-g').textContent    = (p < .4 ? (p/.4*12.4) : (12.4*(1-(p-.4)/.6))).toFixed(1) + ' G';
+
+        // Progress bar
+        document.getElementById('lp-fill').style.width = (p*100) + '%';
+
+        // Heat glow
+        const heatIntensity = p < .4 ? p/.4 : (p > .7 ? 0 : 1-(p-.4)/.3);
+        document.getElementById('heat-glow').style.boxShadow =
+          `inset 0 0 ${80*heatIntensity}px rgba(193,68,14,${.5*heatIntensity})`;
+
+        // Parachute reveal
+        if (p > .55) document.getElementById('chute-wrap').classList.add('deployed');
+
+        // Status text
+        const statEl = document.getElementById('hud-status');
+        if(p < .1)       statEl.textContent = 'SYSTEMS NOMINAL';
+        else if(p < .3)  statEl.textContent = 'ATMOSPHERIC ENTRY INITIATED';
+        else if(p < .55) statEl.textContent = '⚠ PEAK HEATING PHASE';
+        else if(p < .75) statEl.textContent = 'PARACHUTE DEPLOYED';
+        else             statEl.textContent = '✓ TOUCHDOWN CONFIRMED';
+      }
+    }
+  });
+
+  // S5 — Parallax landscape layers
+  gsap.to('#layer-far', {
+    y: -40, ease:'none',
+    scrollTrigger:{trigger:'#s5-explore', start:'top bottom', end:'top top', scrub:.5}
+  });
+  gsap.to('#layer-mid', {
+    y: -80, ease:'none',
+    scrollTrigger:{trigger:'#s5-explore', start:'top bottom', end:'top top', scrub:.8}
+  });
+  gsap.to('#layer-near', {
+    y: -120, ease:'none',
+    scrollTrigger:{trigger:'#s5-explore', start:'top bottom', end:'top top', scrub:1.2}
+  });
+
+  // S5 — Footprint reveal
+  const footprints = document.querySelectorAll('.footprint');
+  footprints.forEach((fp, i) => {
+    ScrollTrigger.create({
+      trigger: '#s5-explore',
+      start: `top ${85 - i*5}%`,
+      once: true,
+      onEnter: () => {
+        setTimeout(() => fp.classList.add('visible'), i * 200);
+      }
+    });
+  });
+
+  // Generic reveal animations
+  document.querySelectorAll('.reveal').forEach(el => {
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 88%',
+      onEnter: () => el.classList.add('in')
+    });
+  });
+}
+
+/* ─── DOT NAV CLICK ─── */
+document.querySelectorAll('.dot-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    if(target) target.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+/* ─── HERO CTA ─── */
+function scrollTo2() {
+  document.getElementById('s2-launch').scrollIntoView({behavior:'smooth'});
+}
+
+/* ─── LAUNCH CHECKLIST ─── */
+const checks = {fuel:false, nav:false, life:false};
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  const key = id.replace('chk-','');
+  checks[key] = !checks[key];
+  el.classList.toggle('checked', checks[key]);
+  el.querySelector('.check-status').textContent = checks[key] ? 'GO ✓' : 'STANDBY';
+  el.setAttribute('aria-pressed', checks[key]);
+  const armed = Object.values(checks).every(Boolean);
+  const btn = document.getElementById('launch-btn');
+  btn.classList.toggle('armed', armed);
+  btn.disabled = !armed;
+  document.getElementById('launch-btn-txt').textContent = armed
+    ? '🚀 INITIATE LAUNCH SEQUENCE'
+    : '— COMPLETE CHECKLIST TO ARM —';
+  if(armed) startCountdown();
+}
+
+// Keyboard support
+document.querySelectorAll('.check-item').forEach(el => {
+  el.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      el.click();
+    }
+  });
+});
+
+/* ─── COUNTDOWN ─── */
+let countdownInterval = null;
+let ctdVal = 10;
+function startCountdown() {
+  if(countdownInterval) return;
+  const ring = document.getElementById('ring-fill');
+  const num = document.getElementById('ring-num');
+  const circumference = 314;
+  ctdVal = 10;
+  countdownInterval = setInterval(() => {
+    ctdVal--;
+    num.textContent = ctdVal > 0 ? ctdVal : '🚀';
+    ring.style.strokeDashoffset = circumference - (circumference * ((10-ctdVal)/10));
+    if(ctdVal <= 0) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  }, 800);
+}
+
+/* ─── LAUNCH SEQUENCE ─── */
+document.getElementById('launch-btn').addEventListener('click', function() {
+  if(!this.classList.contains('armed')) return;
+  // Flash
+  gsap.to('#launch-flash', {opacity:.8, duration:.15, yoyo:true, repeat:2,
+    onComplete: () => { gsap.set('#launch-flash',{opacity:0}); }
+  });
+  // Rocket ascent
+  gsap.timeline()
+    .to('#s2-launch', {x:gsap.utils.random(-6,6), y:gsap.utils.random(-4,4), repeat:12, yoyo:true, duration:.05, ease:'none'})
+    .to('#rocket-body', {y:-800, opacity:0, duration:2.5, ease:'power4.in'}, '-=0.3')
+    .to('#exhaust-wrap .exhaust-flame', {height:80, opacity:1, duration:2}, '<')
+    .to('#s2-launch', {opacity:0, duration:.8}, '-=0.5')
+    .call(() => {
+      document.getElementById('s3-transit').scrollIntoView({behavior:'smooth'});
+      setTimeout(()=>document.getElementById('s2-launch').style.opacity='',2000);
+    });
+  // Reset rocket position after scroll
+  setTimeout(()=>gsap.set('#rocket-body',{y:0,opacity:1}), 4000);
+});
+
+/* ─── LOG SLIDER ─── */
+let logIdx = 0;
+const logTrack = document.getElementById('log-track');
+const logCards = logTrack.children;
+function slideLog(dir) {
+  const max = logCards.length - (window.innerWidth < 600 ? 1 : window.innerWidth < 900 ? 2 : 3);
+  logIdx = Math.max(0, Math.min(logIdx + dir, max));
+  logTrack.style.transform = `translateX(${-logIdx * (280 + 24)}px)`;
+}
+
+// Drag to slide
+let dragStart = null, dragCurrent = 0, isDragging = false;
+const sliderWrap = document.getElementById('log-slider-wrap');
+sliderWrap.addEventListener('pointerdown', e => {
+  dragStart = e.clientX; isDragging = true;
+  sliderWrap.setPointerCapture(e.pointerId);
+});
+sliderWrap.addEventListener('pointermove', e => {
+  if(!isDragging) return;
+  dragCurrent = e.clientX - dragStart;
+});
+sliderWrap.addEventListener('pointerup', () => {
+  if(Math.abs(dragCurrent) > 60) slideLog(dragCurrent < 0 ? 1 : -1);
+  dragStart = null; dragCurrent = 0; isDragging = false;
+});
+
+/* ─── DISCOVERY MODAL DATA ─── */
+const discoveries = [
+  {
+    icon:'🪨', name:'Basalt Formation',
+    body:'A dense cluster of basaltic rock, likely formed from ancient lava flows. The flow patterns indicate Mars had active volcanism within the last billion years — remarkably recent in geological terms.',
+    fact:'Real finding: Jezero Crater\'s floor is made of igneous rock, confirmed by NASA\'s Perseverance rover in 2022.'
+  },
+  {
+    icon:'🧊', name:'Subsurface Ice Layer',
+    body:'Ground-penetrating radar indicates a water-ice layer approximately 1.5 metres beneath the surface. At these depths, ice is shielded from radiation and potential sublimation. Liquid water may persist here.',
+    fact:'Real finding: ESA\'s MARSIS radar detected a subglacial lake ~1.5 km beneath the south polar cap in 2018.'
+  },
+  {
+    icon:'🌪️', name:'Dust Devil Formation',
+    body:'A convective vortex rising approximately 800 metres above the surface. Martian dust devils can generate small electric fields and may play a role in charging the global dust cycle — and potentially interfering with solar panels.',
+    fact:'Real finding: Dust devils clean solar panels. Spirit rover\'s panels were cleaned by one in 2005, extending its mission.'
+  }
+];
+let foundCount = 0;
+
+function discover(i) {
+  const card = document.getElementById('disc-' + i);
+  if(!card.classList.contains('found')) {
+    card.classList.add('found');
+    gsap.from(card, {scale:.9, duration:.4, ease:'back.out(2)'});
+    foundCount++;
+    document.getElementById('find-count').textContent = foundCount;
+    document.getElementById('fd' + i).classList.add('lit');
+    if(foundCount >= 3) setTimeout(showMissionComplete, 600);
+  }
+  openModal(discoveries[i]);
+}
+
+function openModal(d) {
+  document.getElementById('modal-icon').textContent  = d.icon;
+  document.getElementById('modal-title').textContent = d.name;
+  document.getElementById('modal-body').textContent  = d.body;
+  document.getElementById('modal-fact').textContent  = d.fact;
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('modal').querySelector('.modal-close').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal')) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeModal();
+});
+
+function showMissionComplete() {
+  const mc = document.getElementById('mission-complete');
+  mc.classList.add('visible');
+  mc.scrollIntoView({behavior:'smooth', block:'center'});
+  // Star burst effect
+  gsap.from('.badge-display', {scale:0, rotation:360, duration:.8, ease:'back.out(1.5)'});
+}
+
+function restartMission() {
+  window.scrollTo({top:0, behavior:'smooth'});
+  // Reset state
+  setTimeout(() => {
+    foundCount = 0;
+    document.getElementById('find-count').textContent = '0';
+    document.querySelectorAll('.find-dot').forEach(d => d.classList.remove('lit'));
+    document.querySelectorAll('.discovery-card').forEach(c => c.classList.remove('found'));
+    document.getElementById('mission-complete').classList.remove('visible');
+    document.querySelectorAll('.check-item').forEach(c => {
+      c.classList.remove('checked');
+      c.querySelector('.check-status').textContent = 'STANDBY';
+    });
+    Object.keys(checks).forEach(k => checks[k] = false);
+    const btn = document.getElementById('launch-btn');
+    btn.classList.remove('armed'); btn.disabled = true;
+    document.getElementById('launch-btn-txt').textContent = '— COMPLETE CHECKLIST TO ARM —';
+    document.getElementById('chute-wrap').classList.remove('deployed');
+    if(countdownInterval) {clearInterval(countdownInterval); countdownInterval=null;}
+  }, 1000);
+}
+
+/* ─── KEYBOARD NAV for crew cards ─── */
+document.querySelectorAll('.crew-card').forEach(card => {
+  card.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      card.querySelector('.crew-inner').style.transform =
+        card.querySelector('.crew-inner').style.transform === 'rotateY(180deg)'
+          ? '' : 'rotateY(180deg)';
+    }
+  });
+});
+
+/* ─── REDUCED MOTION ─── */
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('*').forEach(el => {
+    el.style.animationDuration = '.01ms';
+    el.style.transitionDuration = '.01ms';
+  });
+}
+</script>
+</body>
+</html>
